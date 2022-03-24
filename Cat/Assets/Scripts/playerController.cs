@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class playerController : MonoBehaviour
 {
+    public EnemyCode spiderCode;
+
 
     public timeManager pp;
     bool stopTime = false;
@@ -82,8 +84,17 @@ public class playerController : MonoBehaviour
     float timerForYValue = 0;
     float Ycheck = 0;
 
+
+    public vendingCode[] venders;
+    public bool isVending = false;
     void Start()
     {
+        GameObject[] currentVenders = GameObject.FindGameObjectsWithTag("Vending Machine");
+        venders = new vendingCode[currentVenders.Length];
+        for (int i = 0; i < currentVenders.Length; i++) venders[0] = currentVenders[i].GetComponentInChildren<vendingCode>();
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
         UIScript = GetComponent<UIController>();
         momontumSpeed = maxSpeed * momentumSpeedMultiplier;
         sprintSpeed = sprintMultiplier * maxSpeed;
@@ -105,6 +116,10 @@ public class playerController : MonoBehaviour
 
     void Update()
     {
+        //Debug.Log(venders.Length);
+        isVending = false;
+        for (int i = 0; i < venders.Length; i++) if (venders[i].shopOpened) isVending = (isVending || venders[i].shopOpened);
+
         timerForYValue -= Time.deltaTime;
         if (timerForYValue <= 0f)
         {
@@ -117,17 +132,20 @@ public class playerController : MonoBehaviour
 
         deductMomentum(Time.deltaTime);
         input();
-        cameraLook();
+        
         checkForWall();
         wallrunInput();
-
+        cameraLook();
     }
 
     void input()
     {
         if (Input.GetKeyDown(KeyCode.Q)) stopTime = true;
-        if (Input.GetKeyDown(KeyCode.E)) {
-            pp.resumeTime(); 
+        if (Input.GetKey(KeyCode.F)) spiderCode.Attack();
+        else spiderCode.StopAttacking();
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            pp.resumeTime();
             stopTime = false;
         }
 
@@ -229,7 +247,7 @@ public class playerController : MonoBehaviour
 
     }
     void movement()
-    {   
+    {
         if (isWallRunning) return;
 
         jump();
@@ -371,6 +389,7 @@ public class playerController : MonoBehaviour
 
     void cameraLook()
     {
+        if (isVending) return;
         float mouseX = Input.GetAxis("Mouse X") * sensitivity * Time.fixedDeltaTime;
         float mouseY = Input.GetAxis("Mouse Y") * sensitivity * Time.fixedDeltaTime;
 

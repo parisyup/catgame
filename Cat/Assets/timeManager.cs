@@ -38,24 +38,32 @@ public class timeManager : MonoBehaviour
         isPaused = true;
     }
 
-
+    private void Update()
+    {
+        if (!isPaused) { 
+            stoppedObjects.Clear();
+            newBulletsToBeStopped.Clear();
+        }
+    }
     public void stopObjectWaitTime()
     {
+        if(newBulletsToBeStopped[0].currentObject == null)
+        {
+            Debug.Log("pause");
+            newBulletsToBeStopped.RemoveAt(0);
+            return;
+        }
         StopObject(newBulletsToBeStopped[0].currentObject.GetComponent<Rigidbody>());
         newBulletsToBeStopped.RemoveAt(0);
     }
     public void StopObject(Rigidbody currentRb)
     {     
+        (GameObject currentObject, float magnitude, Vector3 direction) currentObject = (currentRb.gameObject, currentRb.velocity.magnitude, currentRb.velocity.normalized);
 
-            (GameObject currentObject, float magnitude, Vector3 direction) currentObject = (currentRb.gameObject, currentRb.velocity.magnitude, currentRb.velocity.normalized);
+        stoppedObjects.Add(currentObject);
 
-            stoppedObjects.Add(currentObject);
-
-            currentRb.velocity = Vector3.zero;
-            currentRb.isKinematic = true;
-
-
-
+        currentRb.velocity = Vector3.zero;
+        currentRb.isKinematic = true;
     }
 
 

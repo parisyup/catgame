@@ -24,6 +24,7 @@ public class CustomBullet : MonoBehaviour
     public float maxLifeTime;
     public float LifeTime;
     public bool explodeOnTouch = true;
+    public bool explosive = false;
 
     int collisions;
     PhysicMaterial physicMaterial;
@@ -43,13 +44,17 @@ public class CustomBullet : MonoBehaviour
         physicMaterial.frictionCombine = PhysicMaterialCombine.Minimum;
         physicMaterial.bounceCombine = PhysicMaterialCombine.Maximum;
 
-        GetComponent<SphereCollider>().material = physicMaterial;
+        gameObject.GetComponent<SphereCollider>().material = physicMaterial;
         rb.useGravity = useGravity;
     }
 
     private void Explode()
     {
-        if(explosion != null) Instantiate(explosion, transform.position, Quaternion.identity);
+        if (explosion != null)
+        {
+            GameObject boom = Instantiate(explosion, transform.position, Quaternion.identity);
+            Destroy(boom, 2f);
+        }
 
         Collider[] enemies = Physics.OverlapSphere(transform.position, explosionRange, enemy);
 
@@ -79,7 +84,8 @@ public class CustomBullet : MonoBehaviour
     {
         if (isPaused) return;
         LifeTime -= Time.deltaTime;
-        if(collisions > maxCollision || LifeTime <= 0) Explode();
+        if ((collisions > maxCollision || LifeTime <= 0) && explosive) Explode();
+        else if(collisions > maxCollision || LifeTime <= 0) Destroy(gameObject, 0.04f);
     }
 
 

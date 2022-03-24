@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ProjectileGun : MonoBehaviour
 {
@@ -14,6 +14,7 @@ public class ProjectileGun : MonoBehaviour
     public bool fullAuto;
 
     int bulletsLeft, bulletsShot;
+    float timerForShots = 0;
 
     bool shooting, readyToShoot, reloading;
 
@@ -23,7 +24,12 @@ public class ProjectileGun : MonoBehaviour
     public Camera cam;
     public Transform attackPoint;
     public GameObject muzzleFlash;
-    public TextMeshProUGUI ammunitionDisplay;
+    public Animator anim;
+    public Text ammunitionDisplay;
+    public GameObject ammoDisplay;
+
+    public bool semiAuto;
+    public float ammoPerFeed;
 
     public bool invokeAllowed = true;
 
@@ -31,16 +37,19 @@ public class ProjectileGun : MonoBehaviour
     {
         readyToShoot = true;
         bulletsLeft = magSize;
+
+        ammunitionDisplay = ammoDisplay.GetComponent<Text>();
     }
 
 
     void Update()
     {
+        if (playerRB.gameObject.GetComponent<playerController>().isVending) return;
         PlayerInput();
 
         if(ammunitionDisplay != null)
         {
-            ammunitionDisplay.SetText(bulletsLeft / bulletsPerTap + " / " + magSize / bulletsPerTap);
+            ammunitionDisplay.text = bulletsLeft / bulletsPerTap + " / " + magSize / bulletsPerTap;
         }
     }
 
@@ -49,20 +58,25 @@ public class ProjectileGun : MonoBehaviour
         if (fullAuto) shooting = Input.GetKey(KeyCode.Mouse0);
         else shooting = Input.GetKeyDown(KeyCode.Mouse0);
 
-        if((Input.GetKey(KeyCode.R) && bulletsLeft < magSize && !reloading) || (readyToShoot && shooting && !reloading && bulletsLeft <= 0)) Reload();
+        if((Input.GetKey(KeyCode.R) && bulletsLeft < magSize && !reloading) || (readyToShoot && !reloading && bulletsLeft <= 0)) Reload();
 
-        if(readyToShoot && shooting && !reloading && bulletsLeft > 0)
+        if (readyToShoot && shooting && !reloading && bulletsLeft > 0 && timerForShots <= 0)
         {
             bulletsShot = 0;
 
             Shoot();
         }
+        else timerForShots -= Time.deltaTime;
     }
 
     public void Shoot()
     {
+        timerForShots = fireRate;
         readyToShoot = false;
 
+
+        if(anim != null)    anim.Play("firing");
+        
 
         Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
         RaycastHit hit;
@@ -88,7 +102,12 @@ public class ProjectileGun : MonoBehaviour
         currentBullet.GetComponent<Rigidbody>().AddForce(directionWithSpread.normalized * shootForce, ForceMode.Impulse);
         currentBullet.GetComponent<Rigidbody>().AddForce(cam.transform.up * upwardForce, ForceMode.Impulse);
 
-        if (muzzleFlash != null) Instantiate(muzzleFlash, attackPoint.position, Quaternion.identity);
+        if (muzzleFlash != null) { 
+            GameObject currentMuzzleFlash = Instantiate(muzzleFlash, attackPoint.position, Quaternion.identity);
+            currentMuzzleFlash.transform.SetParent(attackPoint.transform, true);
+            currentMuzzleFlash.transform.rotation = new Quaternion(0, 0, 0, 0);
+            Destroy(currentMuzzleFlash, 0.1f);
+        }
 
 
 
@@ -116,6 +135,8 @@ public class ProjectileGun : MonoBehaviour
 
     private void Reload()
     {
+
+        if (anim != null) anim.Play("reload");
         reloading = true;
         Invoke("ReloadFinished", reloadTime);
     }
